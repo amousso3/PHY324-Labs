@@ -6,6 +6,7 @@ import numpy as np
 import pandas as pd
 from scipy.optimize import curve_fit
 from scipy.constants import c, mu_0, epsilon_0
+from scipy.stats import chi2
 import matplotlib.pyplot as plt 
 
 def access_data(file_name):
@@ -19,7 +20,8 @@ def red_chi_squared(x, y, model_y, params, uncertainties):
 
     chi = ((y - predicted_y) / uncertainties)**2
     chi = chi.sum() / v
-    return [chi, y-predicted_y]
+    chi_prob = 1-chi2.cdf(chi,v)
+    return [chi, y-predicted_y, chi_prob]
 
 def model_processing(model, x, y, y_unc, guesses):
     popt, pcov = curve_fit(model, x, y, sigma=y_unc, absolute_sigma=True, p0 = guesses)
@@ -58,11 +60,11 @@ data = access_data('data/PC_Ex1_Data.csv')
 
 lc_unit, delta_t, delta_unc = data[:,0], data[:,1], data[:,4]
 
-popt, pstd = model_processing(lc_model, lc_unit, delta_t, delta_unc, None)
+popt, pstd = model_processing(lc_model, lc_unit, delta_t, *delta_unc, None)
 
-chi, residuals = red_chi_squared(lc_unit, delta_t, lc_model, popt , delta_unc)
+chi, residuals, chi_prob = red_chi_squared(lc_unit, delta_t, lc_model, popt , delta_unc)
 
-print(chi)
-print(popt[0])
 plot_data2(lc_unit, delta_t, delta_unc, lc_model(lc_unit, *popt), 'LC Slope', 'LC Units', 'Delay Time')
 plot_residuals(lc_unit, residuals, None, delta_unc, 'LC Slope', 'LC units', 'Residuals')
+
+print(chi_prob)
