@@ -51,20 +51,32 @@ def plot_residuals(x, y, xerr, yerr, model_name, x_axis, y_axis):
 def lc_model(x, m, b):
     return m*x + b
 
-def attenuation(Vo, Vi):
-    return 20*np.log10(Vo/Vi)
+def attenuation(Vr, Vi):
+    return 20*np.log10(Vr/Vi)
 
-#def unc_attenuation()
+def unc_attenuation(Vr, uVr, Vi, uVi):
+    return np.sqrt(((20/(Vi*np.log(10)))*uVi)**2+((20/(Vr*np.log(10)))*uVr)**2)
 
 data = access_data('data/PC_Ex1_Data.csv')
 
-lc_unit, delta_t, delta_unc = data[:,0], data[:,1], data[:,4]
+lc_unit, delta_t, delta_unc = data[:,0], (10**-6)*data[:,1], (10**-6)*data[:,4]
 
-popt, pstd = model_processing(lc_model, lc_unit, delta_t, *delta_unc, None)
+Vi = np.array([4.11,4.18,4.36,4.37])
+uVi = np.array([0.02, 0.01, 0.02, 0.01])
+Vr = np.array([3.84,3.49,3.34,2.80])
+uVr = np.array([0.02, 0.02, 0.02, 0.02])
 
+atten = attenuation(Vr, Vi)
+uatten = unc_attenuation(Vr, uVr, Vi, uVi)
+print(np.round(atten,2), np.round(uatten,2))
+
+
+popt, pstd = model_processing(lc_model, lc_unit, delta_t, delta_unc, None)
 chi, residuals, chi_prob = red_chi_squared(lc_unit, delta_t, lc_model, popt , delta_unc)
 
-plot_data2(lc_unit, delta_t, delta_unc, lc_model(lc_unit, *popt), 'LC Slope', 'LC Units', 'Delay Time')
-plot_residuals(lc_unit, residuals, None, delta_unc, 'LC Slope', 'LC units', 'Residuals')
+plot_data2(lc_unit, (10**6)*delta_t, delta_unc, (10**6)*lc_model(lc_unit, *popt), 'LC Slope', 'LC Units', 'Delay Time (microseconds)')
+plot_residuals(lc_unit, residuals, None, delta_unc, 'LC Slope', 'LC units', 'Residuals (microseconds)')
 
-print(chi_prob)
+print(np.round(chi_prob, 1))
+print(np.round((10**6)*popt[0], 3), np.round((10**6)*pstd[0], 3))
+print(np.round((10**6)*popt[1], 1), np.round((10**6)*pstd[1], 1))
