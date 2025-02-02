@@ -78,5 +78,15 @@ plot_data2(lc_unit, (10**6)*delta_t, delta_unc, (10**6)*lc_model(lc_unit, *popt)
 plot_residuals(lc_unit, residuals, None, delta_unc, 'LC Slope', 'LC units', 'Residuals (microseconds)')
 
 print(np.round(chi_prob, 1))
+print((1/popt[0]), (np.sqrt((pstd[0]*(popt[0]**-2))**2)))
 print(np.round((10**6)*popt[0], 3), np.round((10**6)*pstd[0], 3))
 print(np.round((10**6)*popt[1], 1), np.round((10**6)*pstd[1], 1))
+inductance = 1.5 * 10**-3
+capacitance = 0.01 * 10**-6
+
+print(np.sqrt(1/(inductance*capacitance)))
+
+unc_LC = np.array([0.15*10**-3, 0.00003*10**-6])
+lc = np.array([-0.5*capacitance*(inductance*capacitance)**-1.5, -0.5*inductance*(inductance*capacitance)**-1.5])
+
+print(np.sqrt(np.dot(unc_LC**2, lc**2)))
