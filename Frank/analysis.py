@@ -7,7 +7,7 @@ import pandas as pd
 from scipy.optimize import curve_fit
 from scipy.constants import c, mu_0, epsilon_0
 from scipy.stats import chi2
-import matplotlib.pyplot as plt 
+import matplotlib.pyplot as plt
 
 def access_data(file_name):
     data = pd.read_csv(file_name, comment='#')
@@ -15,7 +15,7 @@ def access_data(file_name):
 
 def red_chi_squared(x, y, model_y, params, uncertainties):
     predicted_y = model_y(x, *params)
-    
+
     v = y.size - len(params)
 
     chi = ((y - predicted_y) / uncertainties)**2
@@ -48,45 +48,10 @@ def plot_residuals(x, y, xerr, yerr, model_name, x_axis, y_axis):
     plt.show()
     return None
 
-def lc_model(x, m, b):
-    return m*x + b
+data = access_data('data/5V_2.5V.csv')
 
-def attenuation(Vr, Vi):
-    return 20*np.log10(Vr/Vi)
+current, voltage = data[:,5], data[:,-3]
 
-def unc_attenuation(Vr, uVr, Vi, uVi):
-    return np.sqrt(((20/(Vi*np.log(10)))*uVi)**2+((20/(Vr*np.log(10)))*uVr)**2)
-
-data = access_data('data/PC_Ex1_Data.csv')
-
-lc_unit, delta_t, delta_unc = data[:,0], (10**-6)*data[:,1], (10**-6)*data[:,4]
-
-Vi = np.array([4.11,4.18,4.36,4.37])
-uVi = np.array([0.02, 0.01, 0.02, 0.01])
-Vr = np.array([3.84,3.49,3.34,2.80])
-uVr = np.array([0.02, 0.02, 0.02, 0.02])
-
-atten = attenuation(Vr, Vi)
-uatten = unc_attenuation(Vr, uVr, Vi, uVi)
-print(np.round(atten,2), np.round(uatten,2))
-
-
-popt, pstd = model_processing(lc_model, lc_unit, delta_t, delta_unc, None)
-chi, residuals, chi_prob = red_chi_squared(lc_unit, delta_t, lc_model, popt , delta_unc)
-
-plot_data2(lc_unit, (10**6)*delta_t, delta_unc, (10**6)*lc_model(lc_unit, *popt), 'LC Slope', 'LC Units', 'Delay Time (microseconds)')
+plot_data2(current, voltage, np.zeros(len(current)), (10**6)*lc_model(lc_unit, *popt), 'LC Slope', 'LC Units', 'Delay Time (microseconds)')
 plot_residuals(lc_unit, residuals, None, delta_unc, 'LC Slope', 'LC units', 'Residuals (microseconds)')
 
-print(np.round(chi_prob, 1))
-print((1/popt[0]), (np.sqrt((pstd[0]*(popt[0]**-2))**2)))
-print(np.round((10**6)*popt[0], 3), np.round((10**6)*pstd[0], 3))
-print(np.round((10**6)*popt[1], 1), np.round((10**6)*pstd[1], 1))
-inductance = 1.5 * 10**-3
-capacitance = 0.01 * 10**-6
-
-print(np.sqrt(1/(inductance*capacitance)))
-
-unc_LC = np.array([0.15*10**-3, 0.00003*10**-6])
-lc = np.array([-0.5*capacitance*(inductance*capacitance)**-1.5, -0.5*inductance*(inductance*capacitance)**-1.5])
-
-print(np.sqrt(np.dot(unc_LC**2, lc**2)))

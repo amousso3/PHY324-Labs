@@ -66,6 +66,13 @@ delta_unc = np.array([0.2, 0.4, 0.4, 0.2])
 l = np.array([15.09, 30.5, 48.36, 75.84]) #cable lengths
 l_unc = np.array([0.02, 0.02, 0.02, 0.02])
 
+speed = np.average(2*l/delta_t)
+speed_unc = 0.25 * np.linalg.norm(2 * (2*l/delta_t)*np.sqrt((delta_unc/delta_t)**2+(l_unc/l)**2))
+
+print(speed)
+
+print(speed_unc)
+
 popt, pstd = model_processing(model, 2*l, delta_t, delta_unc, None)
 chi, residuals, chi_prob = red_chi_squared(2*l, delta_t, model, popt , delta_unc)
 
@@ -77,8 +84,8 @@ print(popt[1], pstd[1])
 plot_data2(2*l, (10**6)*delta_t, delta_unc, (10**6)*model(2*l, *popt), 'Linear Model', 'Length Traversed (m)', 'Delay Time (nanoseconds)')
 plot_residuals(2*l, residuals, None, delta_unc, '', 'Length Traversed (m)', 'Residuals (nanoseconds)')
 
-print((1000000000/popt[0])/300000000)
-print((1000000000*pstd[0]*popt[0]**(-2)/300000000))
+print((1000000000*speed)/299792458)
+print((1000000000*speed_unc/299792458))
 
 
 
