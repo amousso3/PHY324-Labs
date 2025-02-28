@@ -5,9 +5,15 @@
 import numpy as np
 import pandas as pd
 from scipy.optimize import curve_fit
+from scipy.signal import find_peaks
 from scipy.stats import chi2
 import matplotlib.pyplot as plt
+from matplotlib import rc
 
+font = {'family' : 'DejaVu Sans',
+        'weight' : 'normal',
+        'size': 20}
+rc('font', **font)
 
 def access_data(file_name):
     data = pd.read_csv(file_name, comment='#')
@@ -57,28 +63,78 @@ def parabolic(x, a, b, c, d):
 def sinusoid(x, a, phi, d, c):
     return a*np.sin(c*x-phi) + d
 
+def data_access(data_name):
+    data = access_data('data/{d}.csv'.format(d=data_name))
+    current, voltage = data[:,4], data[:,6]
 
-data = access_data('data/6V_3V.csv')
-current, voltage = data[:,4], data[:,6]
+    current_unc = current * 0.001 + (50*10**(-12))
 
-current_unc = current * 0.001 + (50*10**(-12))
+    voltage_unc_1 = voltage[:48] * 0.00015 + (225*10**(-6))
+    voltage_unc_2 = voltage[48:477] * 0.0002 + (350*10**(-6))
+    voltage_unc_3 = voltage[477:] * 0.00015 + (5*10**(-3))
+    voltage_unc = np.hstack((voltage_unc_1, voltage_unc_2, voltage_unc_3))
 
-voltage_unc_1 = voltage[:48] * 0.00015 + (225*10**(-6))
-voltage_unc_2 = voltage[48:477] * 0.0002 + (350*10**(-6))
-voltage_unc_3 = voltage[477:] * 0.00015 + (5*10**(-3))
-voltage_unc = np.hstack((voltage_unc_1, voltage_unc_2, voltage_unc_3))
+    plt.errorbar(voltage, current, xerr= voltage_unc, yerr=current_unc, linewidth=1, marker='o',markersize =5, ls='', label=data_name)
+    plt.xlabel("Accelerating Voltage")
+    plt.ylabel("Current")
 
-lb, ub = (420, 550)
+    return current, voltage, current_unc, voltage_unc
 
-model = sinusoid
-p0 = [0.0001, 17, 1]
-popt, pstd = model_processing(model, voltage[lb:ub], current[lb:ub], current_unc[lb:ub], p0)
-chi, residuals, chi_prob = red_chi_squared(voltage[lb:ub], current[lb:ub], model, popt , current_unc[lb:ub])
+data_access("6V_3V")
+data_access("6V_2V")
+data_access("6V_2.25V")
+data_access("6V_2.5V")
+data_access("6V_2.75V")
+data_access("6V_1.75V")
+plt.legend()
+plt.show()
 
-plot_data2(voltage[lb:ub], current[lb:ub], current_unc[lb:ub], model(voltage[lb:ub], *popt), 'Gauss', 'Voltage (V)', 'Current (A)')
-plot_residuals(voltage[lb:ub], residuals, voltage_unc[lb:ub], current_unc[lb:ub], 'Gauss', 'Voltage (V)', 'Current (A)')
+data_access("5V_2.5V")
+data_access("5V_3V")
+data_access("5V_2V")
+plt.legend()
+plt.show()
 
-print(chi_prob, chi)
-print(popt, pstd)
+data_access("5.5V_2.5V")
+data_access("5.5V_3V")
+data_access("5.5V_2V")
+plt.legend()
+plt.show()
+
+data_name = "6V_2.75V"
+current, voltage, current_unc, voltage_unc = data_access(data_name)
+plt.show()
+
+#Remove trough outliers
+current = np.delete(current, [533, 321])
+current_unc = np.delete(current_unc, [533, 321])
+voltage = np.delete(voltage, [533, 321])
+voltage_unc = np.delete(voltage_unc, [533, 321])
+
+#Get Trough Index
+troughs = find_peaks(-current, distance=100)[0][2:]
+
+#Check Troughs
+troughs_current = [current[i] for i in troughs]
+troughs_voltage = [voltage[i] for i in troughs]
+#plt.plot(troughs_voltage, troughs_current)
+
+#Get ranges to use
+sig = 4
+p0_dict={0:[0,15,sig,0],1:[0,20,sig,0],2:[0,25,sig,0],3:[0,30,sig,0],4:[0,35,sig,0]}
+
+for i in range(len(troughs)-1):
+    lb, ub = (troughs[i], troughs[i+1])
+
+    model = myGauss
+    p0 = p0_dict[i]
+    popt, pstd = model_processing(model, voltage[lb:ub], current[lb:ub], current_unc[lb:ub], p0)
+    chi, residuals, chi_prob = red_chi_squared(voltage[lb:ub], current[lb:ub], model, popt , current_unc[lb:ub])
+
+    plot_data2(voltage[lb:ub], current[lb:ub], current_unc[lb:ub], model(voltage[lb:ub], *popt), 'Gauss', 'Accelerating Voltage (V)', 'Current (A)')
+    plot_residuals(voltage[lb:ub], residuals, voltage_unc[lb:ub], current_unc[lb:ub], 'Gauss', 'Accelerating Voltage (V)', 'Current (A)')
+
+    print(chi_prob, chi)
+    print(popt, pstd)
 
 
