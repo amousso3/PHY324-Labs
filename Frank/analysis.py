@@ -4,6 +4,7 @@
 
 import numpy as np
 import pandas as pd
+import scipy.constants
 from scipy.optimize import curve_fit
 from scipy.signal import find_peaks
 from scipy.stats import chi2
@@ -14,6 +15,8 @@ font = {'family' : 'DejaVu Sans',
         'weight' : 'normal',
         'size': 20}
 rc('font', **font)
+
+e = scipy.constants.e
 
 def access_data(file_name):
     data = pd.read_csv(file_name, comment='#')
@@ -117,11 +120,31 @@ troughs = find_peaks(-current, distance=100)[0][2:]
 #Check Troughs
 troughs_current = [current[i] for i in troughs]
 troughs_voltage = [voltage[i] for i in troughs]
+troughs_voltage_unc = [voltage_unc[i] for i in troughs]
 #plt.plot(troughs_voltage, troughs_current)
+#plt.show()
 
-#Get ranges to use
+# Voltage Dips
+excite_voltage = np.diff(troughs_voltage) # MULTIPLY BY e
+excite_voltage_unc = np.zeros(len(troughs_voltage_unc))
+for i in range(len(excite_voltage_unc)-1):
+    v = np.sqrt(troughs_voltage_unc[i]**2+excite_voltage_unc[i+1])
+    excite_voltage_unc[i] = v
+
+average_excite = np.average(excite_voltage)
+average_excite_unc = (1/len(excite_voltage_unc)) * np.linalg.norm(excite_voltage_unc)
+
+print("Average Excitation: {v} +- {u}".format(v=average_excite, u=average_excite_unc) )
+
+error = ((average_excite - 4.9)/4.9) * 100
+print("Error from expected value: {x} %".format(x=error))
+
+
+#Fit Ranges
+
 sig = 4
-p0_dict={0:[0,15,sig,0],1:[0,20,sig,0],2:[0,25,sig,0],3:[0,30,sig,0],4:[0,35,sig,0]}
+A = 10**(-9)
+p0_dict={0:[A,15,sig,0],1:[A,20,sig,0],2:[A,25,sig,0],3:[A,30,sig,0],4:[A,35,sig,0]}
 
 for i in range(len(troughs)-1):
     lb, ub = (troughs[i], troughs[i+1])
@@ -134,7 +157,7 @@ for i in range(len(troughs)-1):
     plot_data2(voltage[lb:ub], current[lb:ub], current_unc[lb:ub], model(voltage[lb:ub], *popt), 'Gauss', 'Accelerating Voltage (V)', 'Current (A)')
     plot_residuals(voltage[lb:ub], residuals, voltage_unc[lb:ub], current_unc[lb:ub], 'Gauss', 'Accelerating Voltage (V)', 'Current (A)')
 
-    print(chi_prob, chi)
+    print("Chi-Probability: {x:.1f}".format(x=chi_prob),"Reduced Chi Squared: {x:.1f}".format(x=chi))
     print(popt, pstd)
 
 
