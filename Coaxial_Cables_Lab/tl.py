@@ -19,8 +19,9 @@ def red_chi_squared(x, y, model_y, params, uncertainties):
     v = y.size - len(params)
 
     chi = ((y - predicted_y) / uncertainties)**2
-    chi = chi.sum() / v
+    chi = chi.sum()
     chi_prob = 1-chi2.cdf(chi,v)
+    chi = chi/v
     return [chi, y-predicted_y, chi_prob]
 
 def model_processing(model, x, y, y_unc, guesses):
