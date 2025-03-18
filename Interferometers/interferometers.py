@@ -92,20 +92,17 @@ temp -= 23.5
 temp_unc = np.ones_like(temp) * 0.3
 fringes_unc = np.ones_like(fringes)
 
-
-
-
 popt, pstd = model_processing(model, temp, fringes, fringes_unc, None)
 red_chi, residuals, chi_prob = red_chi_squared(temp, fringes, model, popt, fringes_unc)
-plot_data2(temp, fringes, temp_unc, fringes_unc, model(temp, *popt),"Linear Fit", "Distance Moved [m]", "Counts of Fringes Appeared")
-plot_residuals(temp, residuals, temp_unc, fringes_unc, "Distance Moved [m]", "Counts of Fringes Appeared")
+plot_data2(temp, fringes, temp_unc, fringes_unc, model(temp, *popt),"Linear Fit", "Change in Temp [C]", "Counts of Fringes Appeared")
+plot_residuals(temp, residuals, temp_unc, fringes_unc, "Change in Temp [C]", "Counts of Fringes Appeared")
 print(red_chi, chi_prob)
 lam = ufloat(wavelength, wavelength_unc)
 m = ufloat(popt[0], pstd[0])
 L0 = ufloat(89.040*10**-3, 0.007 * 10**-3)
 
 alpha = lam*m*(2*L0)**-1
-print(alpha)
+print('Thermal Expansion Coefficient:', alpha)
 
 
 data = access_data('Interferometers/index_ref.csv')
@@ -120,9 +117,17 @@ def quadratic(x, a, b):
 
 popt, pstd = model_processing(quadratic, theta, fringes, fringes_unc, None)
 red_chi, residuals, chi_prob = red_chi_squared(theta, fringes, quadratic, popt, fringes_unc)
-plot_data2(theta, fringes, theta_unc, fringes_unc, quadratic(theta, *popt),"Quadratic Fit", "Distance Moved [m]", "Counts of Fringes Appeared")
-plot_residuals(theta, residuals, theta_unc, fringes_unc, "Distance Moved [m]", "Counts of Fringes Appeared")
+plot_data2(theta, fringes, theta_unc, fringes_unc, quadratic(theta, *popt),"Quadratic Fit", "Angle [degrees]", "Counts of Fringes Appeared")
+plot_residuals(theta, residuals, theta_unc, fringes_unc, "Angle [degrees]", "Counts of Fringes Appeared")
 print(red_chi, chi_prob)
 a = ufloat(popt[0], pstd[0])
 n = (1-a)**-1
-print(n)
+print('Index of Refraction:', n)
+
+f = ufloat(70, 1)
+d_x = ufloat((33-8)*10**-6, tick_unc[0])
+
+
+lam_1 = (2*d_x)/f
+
+print(lam_1)
