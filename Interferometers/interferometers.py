@@ -10,6 +10,7 @@ from scipy.signal import find_peaks
 from scipy.stats import chi2
 import matplotlib.pyplot as plt
 from matplotlib import rc
+from uncertainties import ufloat
 
 font = {'family' : 'DejaVu Sans',
         'weight' : 'normal',
@@ -60,7 +61,7 @@ def plot_residuals(x, y, xerr, yerr, x_axis, y_axis):
 def model(x, a, c):
     return a*x+c
 
-data = access_data("Wavelength.csv")
+data = access_data("Interferometers/Wavelength.csv")
 tick, fringes = data[:,0]*10**(-6), data[:,1]
 tick_unc = np.ones_like(tick) * 10**(-6)
 fringes_unc = np.ones_like(fringes)
@@ -85,4 +86,43 @@ wavelength = 2 * (popt[0])
 wavelength_unc = pstd[0] * 2
 print(wavelength, wavelength_unc)
 
+data = access_data('Interferometers/thermal_exp.csv')
+temp, fringes = data[:,0], data[:,1]
+temp -= 23.5
+temp_unc = np.ones_like(temp) * 0.3
+fringes_unc = np.ones_like(fringes)
 
+
+
+
+popt, pstd = model_processing(model, temp, fringes, fringes_unc, None)
+red_chi, residuals, chi_prob = red_chi_squared(temp, fringes, model, popt, fringes_unc)
+plot_data2(temp, fringes, temp_unc, fringes_unc, model(temp, *popt),"Linear Fit", "Distance Moved [m]", "Counts of Fringes Appeared")
+plot_residuals(temp, residuals, temp_unc, fringes_unc, "Distance Moved [m]", "Counts of Fringes Appeared")
+print(red_chi, chi_prob)
+lam = ufloat(wavelength, wavelength_unc)
+m = ufloat(popt[0], pstd[0])
+L0 = ufloat(89.040*10**-3, 0.007 * 10**-3)
+
+alpha = lam*m*(2*L0)**-1
+print(alpha)
+
+
+data = access_data('Interferometers/index_ref.csv')
+theta, fringes = data[:,0], data[:,1]
+theta_unc = np.ones_like(theta) * 0.5 # deg
+fringes_unc = np.ones_like(fringes)
+
+t = ufloat(7.680e-3, 0.005e-3)
+
+def quadratic(x, a, b):
+    return (t.nominal_value/lam.nominal_value)*a*x**2 + b
+
+popt, pstd = model_processing(quadratic, theta, fringes, fringes_unc, None)
+red_chi, residuals, chi_prob = red_chi_squared(theta, fringes, quadratic, popt, fringes_unc)
+plot_data2(theta, fringes, theta_unc, fringes_unc, quadratic(theta, *popt),"Quadratic Fit", "Distance Moved [m]", "Counts of Fringes Appeared")
+plot_residuals(theta, residuals, theta_unc, fringes_unc, "Distance Moved [m]", "Counts of Fringes Appeared")
+print(red_chi, chi_prob)
+a = ufloat(popt[0], pstd[0])
+n = (1-a)**-1
+print(n)
