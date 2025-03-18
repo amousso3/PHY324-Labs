@@ -84,3 +84,5 @@ print(red_chi, chi_prob)
 wavelength = 2 * (popt[0])
 wavelength_unc = pstd[0] * 2
 print(wavelength, wavelength_unc)
+
+

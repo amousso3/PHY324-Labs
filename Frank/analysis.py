@@ -73,6 +73,7 @@ def myGauss(x, A, mean, width, base, m):
 def sinusoid(x, a, c, d, k, b):
     return a*x*np.sin(k*(x-d))+c+b*x
 
+
 def data_access(data_name):
     data = access_data('data/{d}.csv'.format(d=data_name))
     current, voltage = data[:,4], data[:,6]
@@ -85,7 +86,9 @@ def data_access(data_name):
     voltage_unc = np.hstack((voltage_unc_1, voltage_unc_2, voltage_unc_3))
 
     l = data_name.split('_')
-    label = "E1: " + l[0] + ", E2: " + l[1]
+
+
+    label = r'E1: {x1} $\pm$ 0.01, E2: {x2} $\pm$ 0.01'.format(x1=l[0], x2=l[1])
     plt.errorbar(voltage, current, xerr= voltage_unc, yerr=current_unc, linewidth=1, marker='o',markersize =5, ls='', label=label)
     plt.xlabel("Accelerating Voltage (V)")
     plt.ylabel("Current (A)")
@@ -118,7 +121,7 @@ data_access("5.5V_2V")
 plt.legend()
 plt.show()
 
-data_name = "6V_3V"
+data_name = "5.5V_3V"
 current, voltage, current_unc, voltage_unc = data_access(data_name)
 plt.show()
 
@@ -129,7 +132,7 @@ plot_data2(voltage[319:], current[319:], current_unc[319:], sinusoid(voltage[319
 print(popt, pstd)
 chi, residuals, chi_prob = red_chi_squared(voltage[319:], current[319:], sinusoid, p0,current_unc[319:])
 print(chi, chi_prob)
-plot_residuals(voltage[319:],residuals,voltage_unc[319:], current_unc[319:],"Accelerating Voltage (V)", "Current (A)")
+plot_residuals(voltage[319:],residuals,voltage_unc[319:], current_unc[319:],"Accelerating Voltage (V)", "Current Residuals (A)")
 
 k = popt[-2]
 k_unc = pstd[-2]
@@ -187,7 +190,6 @@ error = ((average_excite - 4.86)/4.86) * 100
 print("Error from expected value: {x} %".format(x=error))
 
 
-
 #Fit Ranges
 
 sig = 1
@@ -242,10 +244,10 @@ for i in range(len(excite_voltage_unc)-1):
 
 print(excite_voltage, excite_voltage_unc)
 average_excite = np.average(excite_voltage)
-average_excite_unc = (1/len(excite_voltage_unc)) * np.linalg.norm(excite_voltage_unc)
+average_excite_unc = excite_voltage.std()
 
 print("Average Excitation: {v} +- {u}".format(v=average_excite, u=average_excite_unc) )
 
-error = ((5.04 - 4.9)/4.9) * 100
+error = ((average_excite - 4.86)/4.86) * 100
 print("Error from expected value: {x} %".format(x=error))
 
