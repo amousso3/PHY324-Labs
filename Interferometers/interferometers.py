@@ -14,7 +14,7 @@ from uncertainties import ufloat
 
 font = {'family' : 'DejaVu Sans',
         'weight' : 'normal',
-        'size': 20}
+        'size': 30}
 rc('font', **font)
 
 e = scipy.constants.e
@@ -41,7 +41,7 @@ def model_processing(model, x, y, y_unc, guesses):
 def plot_data2(x, y,x_unc, y_unc, pred_y, model_name, x_axis, y_axis):
     colors = ['b-', 'g-', 'r-', 'c-', 'm-', 'y-',]
     colors_err = ['blue', 'green', 'red', 'cyan']
-    plt.errorbar(x, y, xerr=x_unc, yerr=y_unc,color=colors_err[0],marker='o',markersize =5,ls='',lw=1,label="Current Data")
+    plt.errorbar(x, y, xerr=x_unc, yerr=y_unc,color=colors_err[0],marker='o',markersize =6,ls='',lw=1,label="Fringe Count Data")
     plt.plot(x, pred_y, colors[2], label=model_name, linewidth=1)
     plt.xlabel(x_axis)
     plt.ylabel(y_axis)
@@ -63,7 +63,7 @@ def model(x, a, c):
 
 data = access_data("Interferometers/Wavelength.csv")
 tick, fringes = data[:,0]*10**(-6), data[:,1]
-tick_unc = np.ones_like(tick) * 10**(-6)
+tick_unc = np.ones_like(tick) * 10**(-6) *0.8
 fringes_unc = np.ones_like(fringes)
 
 p0 = [0.5, 0]
@@ -111,7 +111,7 @@ theta_unc = np.ones_like(theta) * 0.5 # deg
 fringes_unc = np.ones_like(fringes)
 
 t = ufloat(7.680e-3, 0.005e-3)
-
+theta_unc[-1] = 1
 def quadratic(x, a, b):
     return (t.nominal_value/lam.nominal_value)*a*x**2 + b
 
@@ -120,6 +120,7 @@ red_chi, residuals, chi_prob = red_chi_squared(theta, fringes, quadratic, popt, 
 plot_data2(theta, fringes, theta_unc, fringes_unc, quadratic(theta, *popt),"Quadratic Fit", "Angle [degrees]", "Counts of Fringes Appeared")
 plot_residuals(theta, residuals, theta_unc, fringes_unc, "Angle [degrees]", "Counts of Fringes Appeared")
 print(red_chi, chi_prob)
+print(popt,pstd)
 a = ufloat(popt[0], pstd[0])
 n = (1-a)**-1
 print('Index of Refraction:', n)
